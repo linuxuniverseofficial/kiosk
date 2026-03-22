@@ -1,0 +1,58 @@
+UBUNTU SERVER 22.04 LTS and RPi3!
+
+sudo nano /etc/default/locale
+
+LANG="pt_BR.UTF-8"
+LANGUAGE="pt_BR:pt:en"
+LC_ALL="pt_BR.UTF-8"
+
+source /etc/default/locale
+export LANG="pt_BR.UTF-8"
+export LC_ALL="pt_BR.UTF-8"
+
+sudo nano /etc/apache2/conf-available/charset.conf
+AddDefaultCharset UTF-8
+
+sudo apt update && sudo apt upgrade -y && sudo apt autoremove
+
+sudo apt purge needrestart cloud-init snapd unattended-upgrades plank deja-dup evolution evolution-data-server bluez blueman bluetooth -y
+
+sudo apt install apache2 docker.io net-tools speedtest-cli whois netdiscover iperf arp-scan traceroute sshpass network-manager \
+libatasmart-bin smartmontools zip unzip p7zip-full 7zip p7zip cifs-utils rsnapshot rclone iotop \
+haveged stress lm-sensors cmatrix btop inxi tree dialog btrfs-progs build-essential unrar \
+openvpn curl nmap parallel rclone openssh-server samba samba-dsdb-modules samba-vfs-modules beep xinit xorg openbox xdotool
+
+sudo systemctl disable systemd-networkd-wait-online.service && sudo systemctl mask systemd-networkd-wait-online.service && sudo systemctl disable NetworkManager-wait-online.service && sudo systemctl mask NetworkManager-wait-online.service
+
+sudo dd if=/dev/zero of=/swapfile bs=1k count=1000000 && sudo chmod 0600 /swapfile && sudo mkswap /swapfile; sudo swapon /swapfile && echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+
+sudo timedatectl set-timezone Etc/GMT+3 && sudo timedatectl set-local-rtc 1
+
+sudo usermod -aG docker administrador
+
+sudo nano /var/www/html/index.html
+
+sudo mkdir -p /srv/containers/filebrowser/{config,database}
+sudo chmod 777 -R /srv/containers/filebrowser/database && sudo chmod 777 -R /var/www/
+
+sudo wget https://raw.githubusercontent.com/urbancompasspony/kiosk-mode/refs/heads/main/1.%20Default%20Settings/settings.json -O /srv/containers/filebrowser/config/.filebrowser.json
+
+sudo docker run -d \
+--name=filebrowser \
+--network host \
+--hostname=filebrowser \
+--no-healthcheck \
+--restart=unless-stopped \
+-u $(id -u):$(id -g) \
+-p 8081:8081 \
+-v /etc/localtime:/etc/localtime:ro \
+-v /var/www:/srv \
+-v /srv/containers/filebrowser/config/.filebrowser.json:/.filebrowser.json \
+-v /srv/containers/filebrowser/database:/database \
+filebrowser/filebrowser:latest
+
+sudo nano /etc/systemd/system/multi-user.target.wants/NetworkManager.service
+
+add
+ExecStartPre=/bin/sleep 15
+to [SERVICE]
