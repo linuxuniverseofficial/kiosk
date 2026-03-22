@@ -1,0 +1,84 @@
+#!/bin/bash
+
+function checkA {
+  [ "$EUID" -ne 0 ] || {
+    echo "Nao execute esse script como Root!"
+    exit
+    }
+}
+
+function reb00t {
+  dialog --title 'Reiniciar' --backtitle "Reinicio" --yesno 'Deseja reiniciar este sistema agora para aplicar as mudancas?' 0 0
+  [ $? = 0 ] && {
+    clear; echo ""; echo "Digite a senha do usuario: "
+    sudo reboot
+  } || {
+    echo "." >/dev/null
+  }
+}
+
+function checkB {
+  export var1; export var2; export var3; export var4; export var5
+
+  [ -f "/home/administrador/kiosk/Information" ] && {
+    VALUE1=$(sed -n '1p' /home/administrador/kiosk/Information)
+    VALUE2=$(sed -n '2p' /home/administrador/kiosk/Information)
+    VALUE3=$(sed -n '3p' /home/administrador/kiosk/Information)
+    VALUE4=$(sed -n '4p' /home/administrador/kiosk/Information)
+    VALUE5=$(sed -n '5p' /home/administrador/kiosk/Information)
+  } || {
+    VALUE1="https://time.is/S%C3%A3o_Paulo https://www.suitit.com.br"; VALUE2="10"; VALUE3="0"; VALUE4="0"; VALUE5="10"
+  }
+
+  VALUE0=$(dialog --ok-label "Ajustar" --title "K I O S K" --form "WebSites: Enderecos separados com espaco serao alternados pela Duracao. \n
+Duracao: Tempo em segundos ate alternar os sites.\nZoomIn: Valores 110, 125, 150, 175, 200, 250 ou 300% \n
+ZoomOut: Valores 90, 80, 75, 67, 50, 33 ou 25% \nEspera: Segundos antes do script comecar, para maquinas lentas. \n\n
+Nunca habilite ZoomIn e ZoomOut ao mesmo tempo; deixe um campo em 0!\n " 20 75 0 \
+"WebSites:" 1 1 "$VALUE1" 1 10 250 0 \
+"Duracao :" 2 1 "$VALUE2" 2 10 3 0 \
+"Zoom In :" 3 1 "$VALUE3" 3 10 4 0 \
+"Zoom Out:" 4 1 "$VALUE4" 4 10 4 0 \
+"Espera  :" 5 1 "$VALUE5" 5 10 3 0 \
+3>&1 1>&2 2>&3 3>&- > /dev/tty)
+
+  [ $? -ne 0 ] && exit
+
+  var1=$(echo "$VALUE0" | sed -n 1p)
+  var2=$(echo "$VALUE0" | sed -n 2p)
+  var3=$(echo "$VALUE0" | sed -n 3p)
+  var4=$(echo "$VALUE0" | sed -n 4p)
+  var5=$(echo "$VALUE0" | sed -n 5p)
+
+  [ -z "$var1" ] || [ -z "$var2" ] || [ -z "$var3" ] || [ -z "$var4" ] || [ -z "$var5" ] && {
+    dialog --title "ERRO" --msgbox "Não deixe nenhum campo vazio!" 8 40
+    checkB
+  } || {
+    echo "$var1" | tee /home/administrador/kiosk/Information > /home/administrador/kiosk/websites
+    echo "$var2" | tee -a /home/administrador/kiosk/Information > /home/administrador/kiosk/duration
+
+    [ "$var3" = "0" ] && {
+      rm /home/administrador/kiosk/zoomin
+      echo .>/dev/null
+    } || {
+      echo "$var3" | tee /home/administrador/kiosk/zoomin
+    }
+
+    [ "$var4" = "0" ] && {
+      rm /home/administrador/kiosk/zoomout
+      echo .>/dev/null
+    } || {
+      echo "$var4" | tee /home/administrador/kiosk/zoomout
+    }
+
+    echo "$var3" | tee -a /home/administrador/kiosk/Information
+    echo "$var4" | tee -a /home/administrador/kiosk/Information
+    echo "$var5" | tee -a /home/administrador/kiosk/Information > /home/administrador/kiosk/waittime
+
+    reb00t
+    }
+}
+
+checkA
+checkB
+
+exit 1
