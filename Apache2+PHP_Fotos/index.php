@@ -14,6 +14,10 @@ if (isset($_GET['img'])) {
     $caminho = realpath($PASTA_FOTOS . DIRECTORY_SEPARATOR . $nome);
     $base    = realpath($PASTA_FOTOS);
     if ($caminho && $base && strpos($caminho, $base) === 0 && is_file($caminho)) {
+        // Corrige permissão automaticamente se necessário
+        if ((fileperms($caminho) & 0644) !== 0644) {
+            chmod($caminho, 0644);
+        }
         $ext  = strtolower(pathinfo($caminho, PATHINFO_EXTENSION));
         $mime = match($ext) {
             'jpg','jpeg' => 'image/jpeg',
@@ -33,6 +37,7 @@ if (isset($_GET['img'])) {
     exit;
 }
 
+// Lista os arquivos — e já corrige permissão de todos ao listar
 $fotos = [];
 if (is_dir($PASTA_FOTOS)) {
     foreach (scandir($PASTA_FOTOS) as $item) {
@@ -40,7 +45,13 @@ if (is_dir($PASTA_FOTOS)) {
         $caminho = $PASTA_FOTOS . DIRECTORY_SEPARATOR . $item;
         if (!is_file($caminho)) continue;
         $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
-        if (in_array($ext, $extensoes, true)) $fotos[] = $item;
+        if (in_array($ext, $extensoes, true)) {
+            // Corrige permissão de qualquer foto nova ao varrer a pasta
+            if ((fileperms($caminho) & 0644) !== 0644) {
+                chmod($caminho, 0644);
+            }
+            $fotos[] = $item;
+        }
     }
     natsort($fotos);
     $fotos = array_values($fotos);
@@ -170,7 +181,6 @@ $total     = count($fotos);
       bar.style.transition = 'none';
       bar.style.width = '0%';
       void bar.offsetWidth;
-      // Desconta a transição para a barra chegar em 100% junto com o fade
       bar.style.transition = `width ${ms - transicao}ms linear`;
       bar.style.width = '100%';
     }
