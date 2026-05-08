@@ -2,9 +2,9 @@
 // ============================================================
 //  CONFIGURAÇÃO
 // ============================================================
-$PASTA_FOTOS  = __DIR__;  // Pasta com as fotos. Ex: '/var/www/html/fotos'
-$INTERVALO_MS = 10000;     // Tempo por foto em milissegundos (5000 = 5s)
-$TRANSICAO_MS = 900;      // Duração do fade entre fotos
+$PASTA_FOTOS  = __DIR__ . '/Fotos';  // Pasta com as fotos
+$INTERVALO_MS = 10000;               // Tempo por foto em milissegundos
+$TRANSICAO_MS = 900;                 // Duração do fade entre fotos
 // ============================================================
 
 $extensoes = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp'];
@@ -75,7 +75,6 @@ $total     = count($fotos);
   .slide.active  { opacity: 1; }
   .slide.leaving { opacity: 0; }
 
-  /* Fundo: cover + desfoque forte */
   .slide-bg {
     position: absolute;
     inset: -40px;
@@ -85,7 +84,6 @@ $total     = count($fotos);
     filter: blur(28px) brightness(0.45) saturate(0.7);
   }
 
-  /* Frente: foto nítida, contain */
   .slide-fg {
     position: absolute;
     inset: 0;
@@ -172,7 +170,8 @@ $total     = count($fotos);
       bar.style.transition = 'none';
       bar.style.width = '0%';
       void bar.offsetWidth;
-      bar.style.transition = `width ${ms}ms linear`;
+      // Desconta a transição para a barra chegar em 100% junto com o fade
+      bar.style.transition = `width ${ms - transicao}ms linear`;
       bar.style.width = '100%';
     }
 
@@ -203,7 +202,11 @@ $total     = count($fotos);
     (async () => {
       await mostrarFoto(0);
       setInterval(() => {
-        atual = (atual + 1) % total;
+        if (atual === total - 1) {
+          location.reload();
+          return;
+        }
+        atual++;
         mostrarFoto(atual);
       }, intervalo);
     })();
